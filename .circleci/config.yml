@@ -9,6 +9,7 @@ jobs:
     steps:
       - checkout
       - run: circleci tests glob "tests/**/*.m" | circleci tests split --split-by=filesize | awk -F'[\\\\/.]' '{print $(NF-1) "/*"}'
+      - run: cat junit.xml
       # - matlab/run-tests:
       #     select-by-name: $(circleci tests glob "tests/**/*.m" | circleci tests split | awk -F'[\\\\/.]' '{print $(NF-1) "/*"}')
 workflows:
