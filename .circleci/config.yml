@@ -9,7 +9,31 @@ jobs:
     steps:
       - checkout
       - run: circleci tests glob "tests/**/*.m" | circleci tests split --split-by=filesize | awk -F'[\\\\/.]' '{print $(NF-1) "/*"}'
-      - run: cat junit.xml
+      - run:
+          name: Collect and Transform Tests
+          command: |
+            # Collect tests
+            TESTS=$(circleci tests glob "tests/**/*.m" \
+                    | circleci tests split --split-by=filesize \
+                    | awk -F'[\\/ .]' '{print $(NF-1) "/*"}')
+      
+            # Display raw TESTS
+            echo "=== RAW TESTS ==="
+            echo "$TESTS"
+            echo
+      
+            # Transform TESTS using awk
+            selectByName=$(eval echo "$TESTS" | awk '{ \
+              for(i=1; i<=NF; i++) { \
+                gsub(/\047/, "\047\047", $i); \
+                printf "\047%s\047", $i, (i==NF ? "" : ", "); \
+              } \
+            }')
+      
+            # Display transformed TESTS
+            echo "=== AFTER awk transformation ==="
+            echo "$selectByName"
+
       # - matlab/run-tests:
       #     select-by-name: $(circleci tests glob "tests/**/*.m" | circleci tests split | awk -F'[\\\\/.]' '{print $(NF-1) "/*"}')
 workflows:
