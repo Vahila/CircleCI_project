@@ -24,8 +24,7 @@ jobs:
       - checkout
       - matlab/install:
           products: >
-            Simulink MATLAB Coder
-          cache: true
+            Simulink MATLAB_Coder
           release: R2024bU2
       - matlab/run-command:
           command: version
