@@ -1,42 +1,38 @@
 version: 2.1
 orbs:
-  matlab: mathworks/matlab@1
-jobs:
-  run-matlab-tests:    
+  matlab: mathworks/matlab@dev:6b37e4872c89afa846107eeba9de492861d9caca
+  win: circleci/windows@5
+
+executors:
+  linux:
     machine:
-      image: ubuntu-2204:current
-    parallelism: 4
+      image: default
+  macos:
+    macos:
+      xcode: 15.3.0
+    resource_class: macos.m1.medium.gen1
+  windows:
+    win/default
+
+jobs:
+  build:
+    parameters:
+      os:
+        type: executor
+    executor: << parameters.os >>
     steps:
       - checkout
-      - run: circleci tests glob "tests/**/*.m" | circleci tests split --split-by=filesize | awk -F'[\\\\/.]' '{print $(NF-1) "/*"}'
-      - run:
-          name: Collect and Transform Tests
-          command: |
-            # Collect tests
-            TESTS=$(circleci tests glob "tests/**/*.m" \
-                    | circleci tests split --split-by=filesize \
-                    | awk -F'[\\/ .]' '{print $(NF-1) "/*"}')
-      
-            # Display raw TESTS
-            echo "=== RAW TESTS ==="
-            echo "$TESTS"
-            echo
-      
-            # Transform TESTS using awk
-            selectByName=$(eval echo "$TESTS" | awk '{ \
-              for(i=1; i<=NF; i++) { \
-                gsub(/\047/, "\047\047", $i); \
-                printf "\047%s\047", $i, (i==NF ? "" : ", "); \
-              } \
-            }')
-      
-            # Display transformed TESTS
-            echo "=== AFTER awk transformation ==="
-            echo "$selectByName"
-
-      # - matlab/run-tests:
-      #     select-by-name: $(circleci tests glob "tests/**/*.m" | circleci tests split | awk -F'[\\\\/.]' '{print $(NF-1) "/*"}')
+      - matlab/install:
+          products: >
+            Simulink
+          cache: true
+          release: R2024b
+      - matlab/run-command:
+          command: version
 workflows:
-  test:
+  test-caching-cross-platform:
     jobs:
-      - run-matlab-tests
+      - build:
+          matrix:
+            parameters:
+              os: [linux, macos, windows]
